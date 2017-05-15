@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -20,7 +19,9 @@ import javax.media.jai.Histogram;
 import javax.media.jai.ImageLayout;
 import javax.media.jai.Interpolation;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
@@ -52,6 +53,7 @@ import org.opengis.referencing.operation.TransformException;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
+import mil.nga.giat.geowave.adapter.auth.AuthorizationSPI;
 import mil.nga.giat.geowave.adapter.raster.RasterUtils;
 import mil.nga.giat.geowave.adapter.raster.Resolution;
 import mil.nga.giat.geowave.adapter.raster.adapter.CompoundHierarchicalIndexStrategyWrapper;
@@ -87,7 +89,7 @@ public class GeoWaveRasterReader extends
 		AbstractGridCoverage2DReader implements
 		GridCoverage2DReader
 {
-	private final static Logger LOGGER = Logger.getLogger(GeoWaveRasterReader.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(GeoWaveRasterReader.class);
 
 	private GeoWaveRasterConfig config;
 
@@ -100,6 +102,8 @@ public class GeoWaveRasterReader extends
 	private IndexStore geowaveIndexStore;
 
 	private AdapterIndexMappingStore geowaveAdapterIndexMappingStore;
+
+	private AuthorizationSPI authorizationSPI;
 
 	protected final static CoordinateOperationFactory OPERATION_FACTORY = new BufferedCoordinateOperationFactory(
 			new Hints(
@@ -191,6 +195,8 @@ public class GeoWaveRasterReader extends
 		geowaveIndexStore = config.getIndexStore();
 		geowaveAdapterIndexMappingStore = config.getAdapterIndexMappingStore();
 		crs = GeoWaveGTRasterFormat.DEFAULT_CRS;
+		authorizationSPI = config.getAuthorizationFactory().create(
+				config.getAuthorizationURL());
 	}
 
 	/**
@@ -322,7 +328,8 @@ public class GeoWaveRasterReader extends
 		final DataStatistics<?> statistics = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				BoundingBoxDataStatistics.STATS_ID);
+				BoundingBoxDataStatistics.STATS_TYPE,
+				authorizationSPI.getAuthorizations());
 		// try to use both the bounding box and the overview statistics to
 		// determine the width and height at the highest resolution
 		if (statistics instanceof BoundingBoxDataStatistics) {
@@ -362,7 +369,8 @@ public class GeoWaveRasterReader extends
 		DataStatistics<?> statistics = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				BoundingBoxDataStatistics.STATS_ID);
+				BoundingBoxDataStatistics.STATS_TYPE,
+				authorizationSPI.getAuthorizations());
 		int width = 0;
 		int height = 0;
 		// try to use both the bounding box and the overview statistics to
@@ -372,7 +380,8 @@ public class GeoWaveRasterReader extends
 			statistics = geowaveStatisticsStore.getDataStatistics(
 					new ByteArrayId(
 							coverageName),
-					OverviewStatistics.STATS_ID);
+					OverviewStatistics.STATS_TYPE,
+					authorizationSPI.getAuthorizations());
 			if (statistics instanceof OverviewStatistics) {
 				final OverviewStatistics overviewStats = (OverviewStatistics) statistics;
 				width = (int) Math
@@ -803,11 +812,12 @@ public class GeoWaveRasterReader extends
 											// resolution
 											targetIndexStrategy.getIndexStrategy(),
 											rasterIndex.getIndexModel(),
-											rasterIndex.getId())), // make sure
+											rasterIndex.getId()), // make sure
 																	// the
 																	// index ID
 																	// is
 																	// the
+									authorizationSPI.getAuthorizations()),
 							// same as the orginal so that we
 							// are querying the correct table
 							query);
@@ -816,7 +826,8 @@ public class GeoWaveRasterReader extends
 					return geowaveDataStore.query(
 							new QueryOptions(
 									adapter,
-									rasterIndex),
+									rasterIndex,
+									authorizationSPI.getAuthorizations()),
 							query);
 				}
 			}
@@ -1033,7 +1044,8 @@ public class GeoWaveRasterReader extends
 		final DataStatistics<?> stats = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				OverviewStatistics.STATS_ID);
+				OverviewStatistics.STATS_TYPE,
+				authorizationSPI.getAuthorizations());
 		if ((stats != null) && (stats instanceof OverviewStatistics)) {
 			final Resolution[] resolutions = ((OverviewStatistics) stats).getResolutions();
 			final double[][] retVal = new double[resolutions.length][];
@@ -1054,7 +1066,8 @@ public class GeoWaveRasterReader extends
 		final DataStatistics<?> stats = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				HistogramStatistics.STATS_ID);
+				HistogramStatistics.STATS_TYPE,
+				authorizationSPI.getAuthorizations());
 		if ((stats != null) && (stats instanceof HistogramStatistics)) {
 			return ((HistogramStatistics) stats).getHistogram(new Resolution(
 					new double[] {

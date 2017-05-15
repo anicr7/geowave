@@ -14,7 +14,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.AbstractOperation;
 import org.geotools.coverage.processing.BaseStatisticsOperationJAI;
@@ -40,9 +41,9 @@ import mil.nga.giat.geowave.core.store.base.DataStoreEntryInfo;
 public class HistogramStatistics extends
 		AbstractDataStatistics<GridCoverage>
 {
-	private static final Logger LOGGER = Logger.getLogger(HistogramStatistics.class);
-	public static final ByteArrayId STATS_ID = new ByteArrayId(
-			"HISTOGRAM");
+	private static final Logger LOGGER = LoggerFactory.getLogger(HistogramStatistics.class);
+	public static final ByteArrayId STATS_TYPE = new ByteArrayId(
+			"HISTOGRAM_STATS");
 
 	private final Map<Resolution, javax.media.jai.Histogram> histograms = new HashMap<Resolution, javax.media.jai.Histogram>();
 	private HistogramConfig histogramConfig;
@@ -56,16 +57,16 @@ public class HistogramStatistics extends
 			final HistogramConfig histogramConfig ) {
 		super(
 				dataAdapterId,
-				STATS_ID);
+				STATS_TYPE);
 		this.histogramConfig = histogramConfig;
 	}
 
 	@Override
 	public byte[] toBinary() {
-		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final List<byte[]> perEntryBinary = new ArrayList<byte[]>();
 		int totalBytes = 4;
 		for (final Entry<Resolution, javax.media.jai.Histogram> entry : histograms.entrySet()) {
+			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			byte[] keyBytes;
 			byte[] valueBytes = new byte[] {};
 			if (entry.getKey() != null) {
@@ -319,11 +320,6 @@ public class HistogramStatistics extends
 	public javax.media.jai.Histogram getHistogram(
 			final Resolution resolution ) {
 		return histograms.get(resolution);
-	}
-
-	@Override
-	public ByteArrayId getStatisticsId() {
-		return STATS_ID;
 	}
 
 	@Override

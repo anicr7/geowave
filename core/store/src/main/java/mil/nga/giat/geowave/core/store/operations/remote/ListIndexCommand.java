@@ -1,6 +1,5 @@
 package mil.nga.giat.geowave.core.store.operations.remote;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +13,6 @@ import mil.nga.giat.geowave.core.cli.annotations.GeowaveOperation;
 import mil.nga.giat.geowave.core.cli.api.Command;
 import mil.nga.giat.geowave.core.cli.api.DefaultOperation;
 import mil.nga.giat.geowave.core.cli.api.OperationParams;
-import mil.nga.giat.geowave.core.cli.operations.config.options.ConfigOptions;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
 import mil.nga.giat.geowave.core.store.index.Index;
 import mil.nga.giat.geowave.core.store.operations.remote.options.DataStorePluginOptions;
@@ -30,12 +28,11 @@ public class ListIndexCommand extends
 	@Parameter(description = "<store name>")
 	private List<String> parameters = new ArrayList<String>();
 
-	private DataStorePluginOptions inputStoreOptions = null;
-
 	@Override
 	public void execute(
 			OperationParams params )
 			throws IOException {
+
 		if (parameters.size() < 1) {
 			throw new ParameterException(
 					"Must specify store name");
@@ -43,42 +40,35 @@ public class ListIndexCommand extends
 
 		String inputStoreName = parameters.get(0);
 
-		// Attempt to load store.
-		File configFile = (File) params.getContext().get(
-				ConfigOptions.PROPERTIES_FILE_CONTEXT);
+		// Attempt to load the desired input store
 
-		// Attempt to load input store.
-		if (inputStoreOptions == null) {
-			StoreLoader inputStoreLoader = new StoreLoader(
-					inputStoreName);
-			if (!inputStoreLoader.loadFromConfig(configFile)) {
-				throw new ParameterException(
-						"Cannot find store name: " + inputStoreLoader.getStoreName());
+		String result;
+
+		StoreLoader inputStoreLoader = new StoreLoader(
+				inputStoreName);
+		if (!inputStoreLoader.loadFromConfig(getGeoWaveConfigFile(params))) {
+			result = "Cannot find store name: " + inputStoreLoader.getStoreName();
+		}
+		else {
+
+			// Now that store is loaded, pull the list of indexes
+
+			DataStorePluginOptions inputStoreOptions = inputStoreLoader.getDataStorePlugin();
+
+			final CloseableIterator<Index<?, ?>> it = inputStoreOptions.createIndexStore().getIndices();
+			final StringBuffer buffer = new StringBuffer();
+			while (it.hasNext()) {
+				Index<?, ?> index = it.next();
+				buffer.append(
+						index.getId().getString()).append(
+						' ');
 			}
-			inputStoreOptions = inputStoreLoader.getDataStorePlugin();
+			it.close();
+			result = "Available indexes: " + buffer.toString();
 		}
-
-		final CloseableIterator<Index<?, ?>> it = inputStoreOptions.createIndexStore().getIndices();
-		final StringBuffer buffer = new StringBuffer();
-		while (it.hasNext()) {
-			Index<?, ?> index = it.next();
-			buffer.append(
-					index.getId().getString()).append(
-					' ');
-		}
-		it.close();
 
 		JCommander.getConsole().println(
-				"Available indexes: " + buffer.toString());
+				result);
 	}
 
-	public List<String> getParameters() {
-		return parameters;
-	}
-
-	public void setParameters(
-			String storeName ) {
-		this.parameters = new ArrayList<String>();
-		this.parameters.add(storeName);
-	}
 }

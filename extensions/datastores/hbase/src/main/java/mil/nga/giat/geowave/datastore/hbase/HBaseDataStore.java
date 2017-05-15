@@ -21,7 +21,8 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Iterators;
 
@@ -75,7 +76,7 @@ public class HBaseDataStore extends
 {
 	public final static String TYPE = "hbase";
 
-	private final static Logger LOGGER = Logger.getLogger(HBaseDataStore.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(HBaseDataStore.class);
 
 	private final BasicHBaseOperations operations;
 	private final HBaseOptions options;
@@ -205,7 +206,8 @@ public class HBaseDataStore extends
 			final DataAdapter<?> adapter,
 			final ScanCallback<Object> scanCallback,
 			final DedupeFilter dedupeFilter,
-			final String[] authorizations ) {
+			final String[] authorizations,
+			boolean delete ) {
 
 		final String tableName = StringUtils.stringFromBinary(index.getId().getBytes());
 
@@ -369,7 +371,8 @@ public class HBaseDataStore extends
 			final Query sanitizedQuery,
 			final DedupeFilter filter,
 			final QueryOptions sanitizedQueryOptions,
-			final AdapterStore tempAdapterStore ) {
+			final AdapterStore tempAdapterStore,
+			boolean delete ) {
 
 		final HBaseConstraintsQuery hbaseQuery = new HBaseConstraintsQuery(
 				adapterIdsToQuery,
@@ -406,7 +409,8 @@ public class HBaseDataStore extends
 			final ByteArrayId rowPrefix,
 			final QueryOptions sanitizedQueryOptions,
 			final AdapterStore tempAdapterStore,
-			final List<ByteArrayId> adapterIdsToQuery ) {
+			final List<ByteArrayId> adapterIdsToQuery,
+			boolean delete ) {
 		final HBaseRowPrefixQuery<Object> prefixQuery = new HBaseRowPrefixQuery<Object>(
 				index,
 				rowPrefix,
@@ -429,7 +433,8 @@ public class HBaseDataStore extends
 			final List<ByteArrayId> rowIds,
 			final DedupeFilter filter,
 			final QueryOptions sanitizedQueryOptions,
-			final AdapterStore tempAdapterStore ) {
+			final AdapterStore tempAdapterStore,
+			boolean delete ) {
 		final HBaseRowIdsQuery<Object> q = new HBaseRowIdsQuery<Object>(
 				adapter,
 				index,

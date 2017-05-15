@@ -2,7 +2,6 @@ package mil.nga.giat.geowave.examples.ingest;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -13,10 +12,13 @@ import mil.nga.giat.geowave.core.store.IndexWriter;
 import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
 import mil.nga.giat.geowave.datastore.accumulo.BasicAccumuloOperations;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SimpleIngestIndexWriter extends
 		SimpleIngest
 {
-	private static Logger log = Logger.getLogger(SimpleIngestIndexWriter.class);
+	private static Logger log = LoggerFactory.getLogger(SimpleIngestIndexWriter.class);
 
 	public static void main(
 			final String[] args ) {
@@ -36,15 +38,15 @@ public class SimpleIngestIndexWriter extends
 					.error("Invalid arguments, expected: zookeepers, accumuloInstance, accumuloUser, accumuloPass, geowaveNamespace");
 			System.exit(1);
 		}
-		namespace = args[5];
-		instance = args[2];
+		namespace = args[4];
+		instance = args[1];
 		try {
 			final BasicAccumuloOperations bao = si.getAccumuloOperationsInstance(
+					args[0],
 					args[1],
 					args[2],
 					args[3],
-					args[4],
-					args[5]);
+					args[4]);
 			geowaveDataStore = si.getAccumuloGeowaveDataStore(bao);
 		}
 		catch (final Exception e) {

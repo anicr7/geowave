@@ -1,6 +1,5 @@
 package mil.nga.giat.geowave.core.store.operations.remote;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -12,7 +11,6 @@ import com.beust.jcommander.ParametersDelegate;
 
 import mil.nga.giat.geowave.core.cli.api.DefaultOperation;
 import mil.nga.giat.geowave.core.cli.api.OperationParams;
-import mil.nga.giat.geowave.core.cli.operations.config.options.ConfigOptions;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
 import mil.nga.giat.geowave.core.store.adapter.AdapterStore;
@@ -22,7 +20,7 @@ import mil.nga.giat.geowave.core.store.operations.remote.options.StatsCommandLin
 import mil.nga.giat.geowave.core.store.operations.remote.options.StoreLoader;
 
 /**
- * Common methods for dumping and calculating stats.
+ * Common methods for dumping, manipulating and calculating stats.
  */
 public abstract class AbstractStatsCommand extends
 		DefaultOperation
@@ -44,15 +42,12 @@ public abstract class AbstractStatsCommand extends
 			adapterIdName = parameters.get(1);
 		}
 
-		// Attempt to load store.
-		File configFile = (File) params.getContext().get(
-				ConfigOptions.PROPERTIES_FILE_CONTEXT);
+		// Attempt to load input store if not already provided (test purposes).
 
-		// Attempt to load input store.
 		if (inputStoreOptions == null) {
 			StoreLoader inputStoreLoader = new StoreLoader(
 					storeName);
-			if (!inputStoreLoader.loadFromConfig(configFile)) {
+			if (!inputStoreLoader.loadFromConfig(getGeoWaveConfigFile(params))) {
 				throw new ParameterException(
 						"Cannot find store name: " + inputStoreLoader.getStoreName());
 			}
@@ -60,17 +55,22 @@ public abstract class AbstractStatsCommand extends
 		}
 
 		try {
-
 			// Various stores needed
 			AdapterStore adapterStore = inputStoreOptions.createAdapterStore();
-
-			final String[] authorizations = getAuthorizations(statsOptions.getAuthorizations());
 
 			if (adapterIdName != null) {
 				final ByteArrayId adapterId = new ByteArrayId(
 						adapterIdName);
 				DataAdapter<?> adapter = adapterStore.getAdapter(adapterId);
-				if (adapter == null) {
+				if (adapter != null) {
+					performStatsCommand(
+							inputStoreOptions,
+							adapter,
+							statsOptions);
+				}
+				else {
+					// If this adapter is not known, provide list of available
+					// adapters
 					LOGGER.error("Unknown adapter " + adapterId);
 					final CloseableIterator<DataAdapter<?>> it = adapterStore.getAdapters();
 					final StringBuffer buffer = new StringBuffer();
@@ -83,19 +83,16 @@ public abstract class AbstractStatsCommand extends
 					it.close();
 					LOGGER.info("Available adapters: " + buffer.toString());
 				}
-				calculateStatistics(
-						inputStoreOptions,
-						adapter,
-						authorizations);
 			}
 			else {
+				// Repeat the Command for every adapter found
 				try (CloseableIterator<DataAdapter<?>> adapterIt = adapterStore.getAdapters()) {
 					while (adapterIt.hasNext()) {
 						final DataAdapter<?> adapter = adapterIt.next();
-						if (!calculateStatistics(
+						if (!performStatsCommand(
 								inputStoreOptions,
 								adapter,
-								authorizations)) {
+								statsOptions)) {
 							LOGGER.info("Unable to calculate statistics for adapter: "
 									+ adapter.getAdapterId().getString());
 						}
@@ -110,13 +107,24 @@ public abstract class AbstractStatsCommand extends
 		}
 	}
 
-	abstract protected boolean calculateStatistics(
+	/**
+	 * Abstracted command method to be called when command selected
+	 */
+
+	abstract protected boolean performStatsCommand(
 			final DataStorePluginOptions options,
 			final DataAdapter<?> adapter,
-			final String[] authorizations )
+			final StatsCommandLineOptions statsOptions )
 			throws IOException;
 
-	private static String[] getAuthorizations(
+	/**
+	 * Helper method to extract a list of authorizations from a string passed in
+	 * from the command line
+	 * 
+	 * @param auths
+	 *            - String to be parsed
+	 */
+	protected static String[] getAuthorizations(
 			final String auths ) {
 		if ((auths == null) || (auths.length() == 0)) {
 			return new String[0];
@@ -128,21 +136,9 @@ public abstract class AbstractStatsCommand extends
 		return authsArray;
 	}
 
-	public StatsCommandLineOptions getStatsOptions() {
-		return statsOptions;
-	}
-
-	public void setStatsOptions(
-			StatsCommandLineOptions statsOptions ) {
-		this.statsOptions = statsOptions;
-	}
-
-	public DataStorePluginOptions getInputStoreOptions() {
-		return inputStoreOptions;
-	}
-
 	public void setInputStoreOptions(
 			DataStorePluginOptions inputStoreOptions ) {
 		this.inputStoreOptions = inputStoreOptions;
 	}
+
 }

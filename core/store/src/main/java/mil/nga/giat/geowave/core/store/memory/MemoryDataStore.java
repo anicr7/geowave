@@ -13,7 +13,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Iterators;
 
@@ -26,6 +27,7 @@ import mil.nga.giat.geowave.core.store.IndexWriter;
 import mil.nga.giat.geowave.core.store.adapter.AdapterIndexMappingStore;
 import mil.nga.giat.geowave.core.store.adapter.AdapterStore;
 import mil.nga.giat.geowave.core.store.adapter.DataAdapter;
+import mil.nga.giat.geowave.core.store.adapter.IndexDependentDataAdapter;
 import mil.nga.giat.geowave.core.store.adapter.IndexedAdapterPersistenceEncoding;
 import mil.nga.giat.geowave.core.store.adapter.WritableDataAdapter;
 import mil.nga.giat.geowave.core.store.adapter.exceptions.MismatchedIndexToAdapterMapping;
@@ -46,6 +48,7 @@ import mil.nga.giat.geowave.core.store.index.CommonIndexValue;
 import mil.nga.giat.geowave.core.store.index.IndexStore;
 import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
 import mil.nga.giat.geowave.core.store.index.SecondaryIndexDataStore;
+import mil.nga.giat.geowave.core.store.index.writer.IndependentAdapterIndexWriter;
 import mil.nga.giat.geowave.core.store.index.writer.IndexCompositeWriter;
 import mil.nga.giat.geowave.core.store.query.Query;
 import mil.nga.giat.geowave.core.store.query.QueryOptions;
@@ -56,7 +59,7 @@ import mil.nga.giat.geowave.core.store.util.DataStoreUtils;
 public class MemoryDataStore implements
 		DataStore
 {
-	private final static Logger LOGGER = Logger.getLogger(MemoryDataStore.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(MemoryDataStore.class);
 	private final Map<ByteArrayId, TreeSet<MemoryEntryRow>> storeData = Collections
 			.synchronizedMap(new HashMap<ByteArrayId, TreeSet<MemoryEntryRow>>());
 	private final AdapterStore adapterStore;
@@ -107,6 +110,12 @@ public class MemoryDataStore implements
 					adapter,
 					index,
 					i == 0);
+			if (adapter instanceof IndexDependentDataAdapter) {
+				writers[i] = new IndependentAdapterIndexWriter<T>(
+						(IndexDependentDataAdapter<T>) adapter,
+						index,
+						writers[i]);
+			}
 			i++;
 		}
 		return new IndexCompositeWriter(

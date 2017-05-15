@@ -5,7 +5,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.Query;
@@ -49,7 +50,7 @@ import mil.nga.giat.geowave.core.store.adapter.statistics.DataStatistics;
 public class GeoWaveFeatureCollection extends
 		DataFeatureCollection
 {
-	private final static Logger LOGGER = Logger.getLogger(GeoWaveFeatureCollection.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(GeoWaveFeatureCollection.class);
 	private final GeoWaveFeatureReader reader;
 	private CloseableIterator<SimpleFeature> featureCursor;
 	private final Query query;
@@ -74,8 +75,8 @@ public class GeoWaveFeatureCollection extends
 			final Map<ByteArrayId, DataStatistics<SimpleFeature>> statsMap = reader
 					.getTransaction()
 					.getDataStatistics();
-			if (statsMap.containsKey(CountDataStatistics.STATS_ID)) {
-				final CountDataStatistics stats = (CountDataStatistics) statsMap.get(CountDataStatistics.STATS_ID);
+			if (statsMap.containsKey(CountDataStatistics.STATS_TYPE)) {
+				final CountDataStatistics stats = (CountDataStatistics) statsMap.get(CountDataStatistics.STATS_TYPE);
 				if ((stats != null) && stats.isSet()) {
 					return (int) stats.getCount();
 				}
@@ -214,7 +215,7 @@ public class GeoWaveFeatureCollection extends
 		if (GeoWaveFeatureCollection.isDistributedRenderQuery(query)) {
 			return getDistributedRenderFeatureType();
 		}
-		return reader.getComponents().getAdapter().getType();
+		return reader.getComponents().getAdapter().getFeatureType();
 	}
 
 	private Filter getFilter(
@@ -338,9 +339,15 @@ public class GeoWaveFeatureCollection extends
 			return new GeometryFactory().toGeometry(envelope);
 		}
 
-		return reader.clipIndexedBBOXConstraints(ExtractGeometryFilterVisitor.getConstraints(
+		ExtractGeometryFilterVisitorResult geoAndCompareOp = ExtractGeometryFilterVisitor.getConstraints(
 				query.getFilter(),
-				GeoWaveGTDataStore.DEFAULT_CRS));
+				GeoWaveGTDataStore.DEFAULT_CRS);
+		if (geoAndCompareOp == null) {
+			return reader.clipIndexedBBOXConstraints(null);
+		}
+		else {
+			return reader.clipIndexedBBOXConstraints(geoAndCompareOp.getGeometry());
+		}
 	}
 
 	private Query validateQuery(

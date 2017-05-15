@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -38,7 +39,7 @@ public class ConfigCacheIT
 	public File configFile = null;
 	public ManualOperationParams operationParams = null;
 
-	private final static Logger LOGGER = Logger.getLogger(ConfigCacheIT.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(ConfigCacheIT.class);
 	private static long startMillis;
 
 	@BeforeClass
@@ -331,6 +332,7 @@ public class ConfigCacheIT
 		command.setParameters(
 				"lala",
 				"5");
+		command.prepare(operationParams);
 		command.execute(operationParams);
 
 		final Properties props = ConfigOptions.loadProperties(

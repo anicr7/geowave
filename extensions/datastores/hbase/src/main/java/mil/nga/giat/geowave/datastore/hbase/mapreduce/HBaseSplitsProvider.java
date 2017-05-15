@@ -12,7 +12,8 @@ import java.util.TreeSet;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.client.RegionLocator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.index.ByteArrayRange;
@@ -36,7 +37,7 @@ import mil.nga.giat.geowave.mapreduce.splits.SplitsProvider;
 public class HBaseSplitsProvider extends
 		SplitsProvider
 {
-	private final static Logger LOGGER = Logger.getLogger(HBaseSplitsProvider.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(HBaseSplitsProvider.class);
 
 	public static GeoWaveRowRange wrapRange(
 			final ByteArrayRange range ) {
@@ -161,6 +162,12 @@ public class HBaseSplitsProvider extends
 
 		final Map<HRegionLocation, Map<HRegionInfo, List<ByteArrayRange>>> binnedRanges = new HashMap<HRegionLocation, Map<HRegionInfo, List<ByteArrayRange>>>();
 		final RegionLocator regionLocator = hbaseOperations.getRegionLocator(tableName);
+
+		if (regionLocator == null) {
+			LOGGER.error("Unable to retrieve RegionLocator for " + tableName);
+			return splits;
+		}
+
 		while (!ranges.isEmpty()) {
 			ranges = binRanges(
 					ranges,
@@ -177,6 +184,7 @@ public class HBaseSplitsProvider extends
 				final List<RangeLocationPair> rangeList = new ArrayList<RangeLocationPair>();
 
 				for (final ByteArrayRange range : regionEntry.getValue()) {
+					GeoWaveRowRange rowRange = wrapRange(range);
 
 					final double cardinality = getCardinality(
 							getHistStats(
@@ -186,11 +194,11 @@ public class HBaseSplitsProvider extends
 									statsStore,
 									statsCache,
 									authorizations),
-							wrapRange(range));
+							rowRange);
 
 					if (range.intersects(fullrange)) {
 						rangeList.add(constructRangeLocationPair(
-								wrapRange(range),
+								rowRange,
 								hostname,
 								cardinality < 1 ? 1.0 : cardinality));
 					}
@@ -229,6 +237,7 @@ public class HBaseSplitsProvider extends
 		final ListIterator<ByteArrayRange> i = inputRanges.listIterator();
 		while (i.hasNext()) {
 			final ByteArrayRange range = i.next();
+
 			final HRegionLocation location = regionLocator.getRegionLocation(range.getStart().getBytes());
 
 			Map<HRegionInfo, List<ByteArrayRange>> regionInfoMap = binnedRanges.get(location);

@@ -15,7 +15,8 @@ import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Iterators;
 
@@ -42,7 +43,7 @@ import mil.nga.giat.geowave.datastore.accumulo.operations.config.AccumuloOptions
 public class AccumuloSecondaryIndexDataStore extends
 		BaseSecondaryIndexDataStore<Mutation>
 {
-	private final static Logger LOGGER = Logger.getLogger(AccumuloSecondaryIndexDataStore.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(AccumuloSecondaryIndexDataStore.class);
 	private final AccumuloOperations accumuloOperations;
 	private final AccumuloOptions accumuloOptions;
 	private DataStore dataStore = null;
@@ -194,6 +195,7 @@ public class AccumuloSecondaryIndexDataStore extends
 		final Scanner scanner = getScanner(
 				StringUtils.stringFromBinary(secondaryIndex.getId().getBytes()),
 				authorizations);
+
 		if (scanner != null) {
 			scanner.fetchColumnFamily(new Text(
 					SecondaryIndexUtils.constructColumnFamily(
@@ -203,6 +205,7 @@ public class AccumuloSecondaryIndexDataStore extends
 			for (final Range range : ranges) {
 				scanner.setRange(range);
 			}
+
 			if (!secondaryIndex.getSecondaryIndexType().equals(
 					SecondaryIndexType.JOIN)) {
 				final IteratorSetting iteratorSettings = new IteratorSetting(
@@ -252,6 +255,7 @@ public class AccumuloSecondaryIndexDataStore extends
 				}
 			}
 		}
+
 		return new CloseableIterator.Empty<T>();
 	}
 

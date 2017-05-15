@@ -432,11 +432,11 @@ public class QueryOptions implements
 			}
 			else if (indices.isNotEmpty()) {
 				for (final ByteArrayId id : indices.getIndexIds()) {
-					final PrimaryIndex index = (PrimaryIndex) indexStore.getIndex(id);
+					final PrimaryIndex pIndex = (PrimaryIndex) indexStore.getIndex(id);
 					// this could happen if persistent was turned off
-					if (index != null) {
+					if (pIndex != null) {
 						result.add(Pair.of(
-								index,
+								pIndex,
 								adapter));
 					}
 				}
@@ -480,9 +480,11 @@ public class QueryOptions implements
 
 		}
 		final List<DataAdapter> list = new ArrayList<DataAdapter>();
-		try (CloseableIterator<DataAdapter<?>> it = adapterStore.getAdapters()) {
-			while (it.hasNext()) {
-				list.add(it.next());
+		if (adapterStore != null && adapterStore.getAdapters() != null) {
+			try (CloseableIterator<DataAdapter<?>> it = adapterStore.getAdapters()) {
+				while (it.hasNext()) {
+					list.add(it.next());
+				}
 			}
 		}
 		return list.toArray(new DataAdapter[list.size()]);

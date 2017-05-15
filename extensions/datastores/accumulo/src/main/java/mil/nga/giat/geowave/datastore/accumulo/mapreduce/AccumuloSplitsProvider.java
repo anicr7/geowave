@@ -19,13 +19,15 @@ import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.client.mock.MockInstance;
+import org.apache.accumulo.core.client.security.tokens.NullToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.master.state.tables.TableState;
 import org.apache.accumulo.core.util.UtilWaitThread;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import mil.nga.giat.geowave.core.index.NumericIndexStrategy;
 import mil.nga.giat.geowave.core.index.sfc.data.MultiDimensionalNumericData;
@@ -59,7 +61,7 @@ import org.apache.accumulo.core.data.impl.KeyExtent;
 public class AccumuloSplitsProvider extends
 		SplitsProvider
 {
-	private final static Logger LOGGER = Logger.getLogger(AccumuloSplitsProvider.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(AccumuloSplitsProvider.class);
 
 	@Override
 	protected TreeSet<IntermediateSplitInfo> populateIntermediateSplits(
@@ -137,18 +139,28 @@ public class AccumuloSplitsProvider extends
 			}
 		}
 		// get the metadata information for these ranges
-		final Map<String, Map<KeyExtent, List<Range>>> tserverBinnedRanges = new HashMap<String, Map<KeyExtent, List<Range>>>();
+		final Map<String, Map<KeyExtent, List<Range>>> tserverBinnedRanges = getBinnedRangesStructure();
 		TabletLocator tl;
 		try {
 			final Instance instance = accumuloOperations.getInstance();
-			final String tableId = Tables.getTableId(
-					instance,
-					tableName);
-
-			final Credentials credentials = new Credentials(
-					accumuloOperations.getUsername(),
-					new PasswordToken(
-							accumuloOperations.getPassword()));
+			final String tableId;
+			Credentials credentials;
+			if (instance instanceof MockInstance) {
+				tableId = "";
+				// in this case, we will have no password;
+				credentials = new Credentials(
+						accumuloOperations.getUsername(),
+						new NullToken());
+			}
+			else {
+				tableId = Tables.getTableId(
+						instance,
+						tableName);
+				credentials = new Credentials(
+						accumuloOperations.getUsername(),
+						new PasswordToken(
+								accumuloOperations.getPassword()));
+			}
 
 			// @formatter:off
 				/*if[accumulo.api=1.6]
@@ -203,7 +215,7 @@ public class AccumuloSplitsProvider extends
 					e);
 		}
 
-		final HashMap<String, String> hostNameCache = new HashMap<String, String>();
+		final HashMap<String, String> hostNameCache = getHostNameCache();
 		for (final Entry<String, Map<KeyExtent, List<Range>>> tserverBin : tserverBinnedRanges.entrySet()) {
 			final String tabletServer = tserverBin.getKey();
 			final String ipAddress = tabletServer.split(
@@ -264,6 +276,24 @@ public class AccumuloSplitsProvider extends
 		}
 
 		return splits;
+	}
+
+	/**
+	 * Returns data structure to be filled by binnedRanges Extracted out to
+	 * facilitate testing
+	 */
+	public Map<String, Map<KeyExtent, List<Range>>> getBinnedRangesStructure() {
+		final Map<String, Map<KeyExtent, List<Range>>> tserverBinnedRanges = new HashMap<String, Map<KeyExtent, List<Range>>>();
+		return tserverBinnedRanges;
+	}
+
+	/**
+	 * Returns host name cache data structure Extracted out to facilitate
+	 * testing
+	 */
+	public HashMap<String, String> getHostNameCache() {
+		final HashMap<String, String> hostNameCache = new HashMap<String, String>();
+		return hostNameCache;
 	}
 
 	public static GeoWaveRowRange wrapRange(
@@ -341,7 +371,7 @@ public class AccumuloSplitsProvider extends
 	 *             if the table name set on the configuration doesn't exist
 	 *
 	 */
-	protected static TabletLocator getTabletLocator(
+	protected TabletLocator getTabletLocator(
 			final Object clientContextOrInstance,
 			final String tableId )
 			throws TableNotFoundException {

@@ -1,7 +1,6 @@
 package mil.nga.giat.geowave.mapreduce.splits;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,9 +11,9 @@ import java.util.TreeSet;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.store.DataStoreOperations;
 import mil.nga.giat.geowave.core.store.adapter.AdapterIndexMappingStore;
 import mil.nga.giat.geowave.core.store.adapter.AdapterStore;
@@ -22,7 +21,6 @@ import mil.nga.giat.geowave.core.store.adapter.DataAdapter;
 import mil.nga.giat.geowave.core.store.adapter.statistics.DataStatisticsStore;
 import mil.nga.giat.geowave.core.store.adapter.statistics.RowRangeDataStatistics;
 import mil.nga.giat.geowave.core.store.adapter.statistics.RowRangeHistogramStatistics;
-import mil.nga.giat.geowave.core.store.adapter.statistics.histogram.ByteUtils;
 import mil.nga.giat.geowave.core.store.index.Index;
 import mil.nga.giat.geowave.core.store.index.IndexStore;
 import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
@@ -31,7 +29,7 @@ import mil.nga.giat.geowave.core.store.query.QueryOptions;
 
 public abstract class SplitsProvider
 {
-	private final static Logger LOGGER = Logger.getLogger(SplitsProvider.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(SplitsProvider.class);
 
 	private static final BigInteger TWO = BigInteger.valueOf(2);
 
@@ -144,7 +142,7 @@ public abstract class SplitsProvider
 
 		final RowRangeDataStatistics<?> stats = (RowRangeDataStatistics<?>) statsStore.getDataStatistics(
 				index.getId(),
-				RowRangeDataStatistics.getId(index.getId()),
+				RowRangeDataStatistics.composeId(index.getId()),
 				authorizations);
 		if (stats == null) {
 			LOGGER

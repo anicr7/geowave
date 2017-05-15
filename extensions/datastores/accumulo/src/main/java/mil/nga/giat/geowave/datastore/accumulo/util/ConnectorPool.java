@@ -29,6 +29,7 @@ public class ConnectorPool
 			final String password )
 			throws AccumuloException,
 			AccumuloSecurityException {
+
 		final ConnectorConfig config = new ConnectorConfig(
 				zookeeperUrl,
 				instanceName,

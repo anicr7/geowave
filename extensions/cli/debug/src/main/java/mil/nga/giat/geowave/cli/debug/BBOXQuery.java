@@ -2,7 +2,8 @@ package mil.nga.giat.geowave.cli.debug;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import mil.nga.giat.geowave.adapter.vector.GeotoolsFeatureDataAdapter;
 import mil.nga.giat.geowave.core.cli.annotations.GeowaveOperation;
@@ -26,7 +27,7 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 public class BBOXQuery extends
 		AbstractGeoWaveQuery
 {
-	private static Logger LOGGER = Logger.getLogger(BBOXQuery.class);
+	private static Logger LOGGER = LoggerFactory.getLogger(BBOXQuery.class);
 
 	@Parameter(names = {
 		"-e",
@@ -55,7 +56,7 @@ public class BBOXQuery extends
 	@Parameter(names = {
 		"--useAggregation",
 		"-agg"
-	}, required = false, description = "Compute count on the server side")
+	}, description = "Compute count on the server side")
 	private Boolean useAggregation = Boolean.FALSE;
 
 	private Geometry geom;

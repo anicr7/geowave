@@ -28,7 +28,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.data.DataStoreFinder;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -40,6 +41,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import com.vividsolutions.jts.geom.Geometry;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import mil.nga.giat.geowave.adapter.raster.util.ZipUtils;
 import mil.nga.giat.geowave.adapter.vector.export.VectorMRExportCommand;
 import mil.nga.giat.geowave.adapter.vector.export.VectorMRExportOptions;
 import mil.nga.giat.geowave.core.cli.parser.ManualOperationParams;
@@ -87,7 +89,7 @@ public class BasicMapReduceIT
 	@BeforeClass
 	public static void extractTestFiles()
 			throws URISyntaxException {
-		TestUtils.unZipFile(
+		ZipUtils.unZipFile(
 				new File(
 						MapReduceTestEnvironment.class.getClassLoader().getResource(
 								TEST_DATA_ZIP_RESOURCE_PATH).toURI()),
@@ -113,7 +115,7 @@ public class BasicMapReduceIT
 		LOGGER.warn("-----------------------------------------");
 	}
 
-	private final static Logger LOGGER = Logger.getLogger(BasicMapReduceIT.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(BasicMapReduceIT.class);
 	private static final String TEST_EXPORT_DIRECTORY = "basicMapReduceIT-export";
 
 	public static enum ResultCounterType {

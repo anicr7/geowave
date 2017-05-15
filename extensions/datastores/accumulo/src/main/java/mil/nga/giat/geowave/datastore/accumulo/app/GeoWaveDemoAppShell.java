@@ -10,11 +10,13 @@ else[accumulo.api=1.6]*/
 import org.apache.accumulo.shell.Shell;
 /*end[accumulo.api=1.6]*/
 // @formatter:on
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jline.WindowsTerminal;
 import jline.console.ConsoleReader;
+
+import mil.nga.giat.geowave.core.cli.operations.config.security.utils.SecurityUtils;
 
 public class GeoWaveDemoAppShell
 {
@@ -22,8 +24,8 @@ public class GeoWaveDemoAppShell
 	public static void main(
 			final String[] args )
 			throws Exception {
-		Logger.getRootLogger().setLevel(
-				Level.WARN);
+		org.apache.log4j.Logger.getRootLogger().setLevel(
+				org.apache.log4j.Level.WARN);
 
 		final String instanceName = (System.getProperty("instanceName") != null) ? System.getProperty("instanceName")
 				: "geowave";

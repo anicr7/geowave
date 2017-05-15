@@ -12,7 +12,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.store.adapter.statistics.RowRangeHistogramStatistics;
@@ -23,7 +24,7 @@ public class IntermediateSplitInfo implements
 		Comparable<IntermediateSplitInfo>
 {
 
-	private final static Logger LOGGER = Logger.getLogger(IntermediateSplitInfo.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(IntermediateSplitInfo.class);
 
 	protected class IndexRangeLocation
 	{
@@ -331,7 +332,7 @@ public class IntermediateSplitInfo implements
 
 	}
 
-	synchronized GeoWaveInputSplit toFinalSplit() {
+	public synchronized GeoWaveInputSplit toFinalSplit() {
 		final Set<String> locations = new HashSet<String>();
 		for (final Entry<PrimaryIndex, List<RangeLocationPair>> entry : splitInfo.entrySet()) {
 			for (final RangeLocationPair pair : entry.getValue()) {

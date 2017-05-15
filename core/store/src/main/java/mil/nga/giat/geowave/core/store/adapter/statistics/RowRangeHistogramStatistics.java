@@ -5,12 +5,13 @@ import java.nio.ByteBuffer;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.index.Mergeable;
 import mil.nga.giat.geowave.core.store.adapter.statistics.histogram.ByteUtils;
+import mil.nga.giat.geowave.core.store.adapter.statistics.histogram.MinimalBinDistanceHistogram.MinimalBinDistanceHistogramFactory;
 import mil.nga.giat.geowave.core.store.adapter.statistics.histogram.NumericHistogram;
 import mil.nga.giat.geowave.core.store.adapter.statistics.histogram.NumericHistogramFactory;
-import mil.nga.giat.geowave.core.store.adapter.statistics.histogram.MinimalBinDistanceHistogram.MinimalBinDistanceHistogramFactory;
 import mil.nga.giat.geowave.core.store.base.DataStoreEntryInfo;
-
-import org.apache.commons.lang3.ArrayUtils;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
 
 /**
  * Dynamic histogram provide very high accuracy for CDF and quantiles over the a
@@ -20,8 +21,8 @@ import org.apache.commons.lang3.ArrayUtils;
 public class RowRangeHistogramStatistics<T> extends
 		AbstractDataStatistics<T>
 {
-	public static final ByteArrayId STATS_ID = new ByteArrayId(
-			"RANGE_HISTOGRAM_");
+	public static final ByteArrayId STATS_TYPE = new ByteArrayId(
+			"ROW_RANGE_HISTOGRAM");
 	private static final NumericHistogramFactory HistFactory = new MinimalBinDistanceHistogramFactory();
 	NumericHistogram histogram = HistFactory.create(1024);
 
@@ -30,40 +31,39 @@ public class RowRangeHistogramStatistics<T> extends
 	}
 
 	public RowRangeHistogramStatistics(
-			final ByteArrayId adapterId,
-			final ByteArrayId indexId ) {
+			final ByteArrayId dataAdapterId,
+			final ByteArrayId statisticsId ) {
 		super(
-				adapterId,
-				composeId(indexId));
+				dataAdapterId,
+				composeId(statisticsId));
 	}
 
 	public RowRangeHistogramStatistics(
-			final ByteArrayId adapterId,
+			final ByteArrayId dataAdapterId,
 			final ByteArrayId indexId,
 			NumericHistogramFactory factory,
 			int bins ) {
 		super(
-				adapterId,
+				dataAdapterId,
 				composeId(indexId));
 		histogram = factory.create(bins);
 	}
 
 	public RowRangeHistogramStatistics(
-			final ByteArrayId adapterId,
-			final ByteArrayId indexId,
+			final ByteArrayId dataAdapterId,
+			final ByteArrayId statisticsId,
 			int bins ) {
 		super(
-				adapterId,
-				composeId(indexId));
+				dataAdapterId,
+				composeId(statisticsId));
 		histogram = HistFactory.create(bins);
 	}
 
 	public static ByteArrayId composeId(
-			ByteArrayId indexId ) {
-		return new ByteArrayId(
-				ArrayUtils.addAll(
-						STATS_ID.getBytes(),
-						indexId.getBytes()));
+			ByteArrayId statisticsId ) {
+		return composeId(
+				STATS_TYPE.getString(),
+				statisticsId.getString());
 	}
 
 	@Override
@@ -76,11 +76,13 @@ public class RowRangeHistogramStatistics<T> extends
 
 	public static ByteArrayId decomposeFromId(
 			final ByteArrayId id ) {
-		int idLength = id.getBytes().length - STATS_ID.getBytes().length;
+		// Need to account for length of type and of the separator
+		int lengthOfNonId = STATS_TYPE.getBytes().length + STATS_ID_SEPARATOR.length();
+		int idLength = id.getBytes().length - lengthOfNonId;
 		byte[] idBytes = new byte[idLength];
 		System.arraycopy(
 				id.getBytes(),
-				STATS_ID.getBytes().length,
+				lengthOfNonId,
 				idBytes,
 				0,
 				idLength);
@@ -211,6 +213,49 @@ public class RowRangeHistogramStatistics<T> extends
 		buffer.append("}]");
 		buffer.append("}]");
 		return buffer.toString();
+	}
+
+	/**
+	 * Convert Row Range Numeric statistics to a JSON object
+	 */
+
+	public JSONObject toJSONObject()
+			throws JSONException {
+		JSONObject jo = new JSONObject();
+		jo.put(
+				"type",
+				STATS_TYPE.getString());
+
+		jo.put(
+				"statisticsID",
+				statisticsId.getString());
+
+		jo.put(
+				"range_min",
+				histogram.getMinValue());
+		jo.put(
+				"range_max",
+				histogram.getMaxValue());
+		jo.put(
+				"totalCount",
+				histogram.getTotalCount());
+		JSONArray binsArray = new JSONArray();
+		for (final double v : this.quantile(10)) {
+			binsArray.add(v);
+		}
+		jo.put(
+				"bins",
+				binsArray);
+
+		JSONArray countsArray = new JSONArray();
+		for (final long v : count(10)) {
+			countsArray.add(v);
+		}
+		jo.put(
+				"counts",
+				countsArray);
+
+		return jo;
 	}
 
 }

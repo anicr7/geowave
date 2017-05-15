@@ -11,7 +11,8 @@ import java.util.Map.Entry;
 import javax.media.jai.Interpolation;
 
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.geometry.GeneralEnvelope;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -24,6 +25,7 @@ import mil.nga.giat.geowave.adapter.raster.operations.ResizeCommand;
 import mil.nga.giat.geowave.adapter.raster.plugin.GeoWaveGTRasterFormat;
 import mil.nga.giat.geowave.adapter.raster.plugin.GeoWaveRasterConfig;
 import mil.nga.giat.geowave.adapter.raster.plugin.GeoWaveRasterReader;
+import mil.nga.giat.geowave.adapter.raster.util.ZipUtils;
 import mil.nga.giat.geowave.analytic.mapreduce.operations.KdeCommand;
 import mil.nga.giat.geowave.core.cli.parser.ManualOperationParams;
 import mil.nga.giat.geowave.core.store.GeoWaveStoreFinder;
@@ -70,13 +72,13 @@ public class KDERasterResizeIT
 
 	protected DataStorePluginOptions inputDataStorePluginOptions;
 
-	private final static Logger LOGGER = Logger.getLogger(KDERasterResizeIT.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(KDERasterResizeIT.class);
 	private static long startMillis;
 
 	@BeforeClass
 	public static void extractTestFiles()
 			throws URISyntaxException {
-		TestUtils.unZipFile(
+		ZipUtils.unZipFile(
 				new File(
 						KDERasterResizeIT.class.getClassLoader().getResource(
 								TEST_DATA_ZIP_RESOURCE_PATH).toURI()),

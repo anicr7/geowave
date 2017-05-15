@@ -7,7 +7,8 @@ import java.util.UUID;
 
 import mil.nga.giat.geowave.adapter.vector.plugin.transaction.GeoWaveTransaction;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.data.FeatureWriter;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.util.Utilities;
@@ -37,7 +38,7 @@ public class GeoWaveFeatureWriter implements
 			final GeoWaveFeatureReader reader ) {
 		this.transaction = transaction;
 		myReader = reader;
-		featureType = components.getAdapter().getType();
+		featureType = components.getAdapter().getFeatureType();
 	}
 
 	@Override
@@ -100,7 +101,7 @@ public class GeoWaveFeatureWriter implements
 				live);
 	}
 
-	private final static Logger LOGGER = Logger.getLogger(GeoWaveFeatureWriter.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(GeoWaveFeatureWriter.class);
 
 	@Override
 	public void write()

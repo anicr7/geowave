@@ -69,17 +69,99 @@ public class SpatialQueryFilter extends
 			public boolean compare(
 					final Geometry dataGeometry,
 					final PreparedGeometry constraintGeometry ) {
-				return constraintGeometry.intersects(dataGeometry);
+				return constraintGeometry.overlaps(dataGeometry);
 			}
 
 			@Override
 			public BasicQueryCompareOperation getBaseCompareOp() {
 				return BasicQueryCompareOperation.OVERLAPS;
 			}
+		},
+		INTERSECTS {
+			@Override
+			public boolean compare(
+					final Geometry dataGeometry,
+					final PreparedGeometry constraintGeometry ) {
+				return constraintGeometry.intersects(dataGeometry);
+			}
+
+			@Override
+			public BasicQueryCompareOperation getBaseCompareOp() {
+				return BasicQueryCompareOperation.INTERSECTS;
+			}
+		},
+		TOUCHES {
+			@Override
+			public boolean compare(
+					final Geometry dataGeometry,
+					final PreparedGeometry constraintGeometry ) {
+				return constraintGeometry.touches(dataGeometry);
+			}
+
+			@Override
+			public BasicQueryCompareOperation getBaseCompareOp() {
+				return BasicQueryCompareOperation.TOUCHES;
+			}
+		},
+		WITHIN {
+			@Override
+			public boolean compare(
+					final Geometry dataGeometry,
+					final PreparedGeometry constraintGeometry ) {
+				return constraintGeometry.within(dataGeometry);
+			}
+
+			@Override
+			public BasicQueryCompareOperation getBaseCompareOp() {
+				return BasicQueryCompareOperation.WITHIN;
+			}
+		},
+		DISJOINT {
+			@Override
+			public boolean compare(
+					final Geometry dataGeometry,
+					final PreparedGeometry constraintGeometry ) {
+				return constraintGeometry.disjoint(dataGeometry);
+			}
+
+			@Override
+			public BasicQueryCompareOperation getBaseCompareOp() {
+				return BasicQueryCompareOperation.DISJOINT;
+			}
+		},
+		CROSSES {
+			@Override
+			public boolean compare(
+					final Geometry dataGeometry,
+					final PreparedGeometry constraintGeometry ) {
+				return constraintGeometry.crosses(dataGeometry);
+			}
+
+			@Override
+			public BasicQueryCompareOperation getBaseCompareOp() {
+				return BasicQueryCompareOperation.CROSSES;
+			}
+		},
+		EQUALS {
+			@Override
+			public boolean compare(
+					final Geometry dataGeometry,
+					final PreparedGeometry constraintGeometry ) {
+				// This method is same as Geometry.equalsTopo which is
+				// computationally expensive.
+				// See equalsExact for quick structural equality
+				return constraintGeometry.getGeometry().equals(
+						dataGeometry);
+			}
+
+			@Override
+			public BasicQueryCompareOperation getBaseCompareOp() {
+				return BasicQueryCompareOperation.EQUALS;
+			}
 		}
 	};
 
-	private CompareOperation compareOperation = CompareOperation.OVERLAPS;
+	private CompareOperation compareOperation = CompareOperation.INTERSECTS;
 
 	private Set<ByteArrayId> geometryFieldIds;
 
@@ -92,24 +174,27 @@ public class SpatialQueryFilter extends
 			final NumericDimensionField<?>[] orderedConstrainedDimensionDefinitions,
 			final NumericDimensionField<?>[] unconstrainedDimensionDefinitions,
 			final Geometry queryGeometry,
-			final CompareOperation compareOp ) {
+			final CompareOperation compareOp,
+			final BasicQueryCompareOperation nonSpatialCompareOp ) {
 		this(
 				stripGeometry(
 						query,
 						orderedConstrainedDimensionDefinitions,
 						unconstrainedDimensionDefinitions),
 				queryGeometry,
-				compareOp);
+				compareOp,
+				nonSpatialCompareOp);
 	}
 
 	private SpatialQueryFilter(
 			final StrippedGeometry strippedGeometry,
 			final Geometry queryGeometry,
-			final CompareOperation compareOp ) {
+			final CompareOperation compareOp,
+			final BasicQueryCompareOperation nonSpatialCompareOp ) {
 		super(
 				strippedGeometry.strippedQuery,
 				strippedGeometry.strippedDimensionDefinitions,
-				compareOp.getBaseCompareOp());
+				nonSpatialCompareOp);
 		preparedGeometryImage = new GeometryImage(
 				FACTORY.create(queryGeometry));
 		geometryFieldIds = strippedGeometry.geometryFieldIds;

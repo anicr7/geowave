@@ -19,7 +19,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.util.VersionInfo;
 import org.apache.hadoop.util.VersionUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -46,12 +47,10 @@ import mil.nga.giat.geowave.core.store.operations.remote.options.DataStorePlugin
 import mil.nga.giat.geowave.core.store.operations.remote.options.IndexPluginOptions;
 import mil.nga.giat.geowave.core.store.query.DistributableQuery;
 import mil.nga.giat.geowave.core.store.query.QueryOptions;
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 
 public class TestUtils
 {
-	private final static Logger LOGGER = Logger.getLogger(TestUtils.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
 	public static enum DimensionalityType {
 		SPATIAL(
@@ -350,71 +349,6 @@ public class TestUtils
 		// otherwise just return a spatial query
 		return new SpatialQuery(
 				filterGeometry);
-	}
-
-	/**
-	 * Unzips the contents of a zip file to a target output directory, deleting
-	 * anything that existed beforehand
-	 *
-	 * @param zipInput
-	 *            input zip file
-	 * @param outputFolder
-	 *            zip file output folder
-	 *
-	 */
-	public static void unZipFile(
-			final File zipInput,
-			final String outputFolder ) {
-		unZipFile(
-				zipInput,
-				outputFolder,
-				true);
-	}
-
-	/**
-	 * Unzips the contents of a zip file to a target output directory
-	 *
-	 * @param zipInput
-	 *            input zip file
-	 * @param outputFolder
-	 *            zip file output folder
-	 *
-	 * @param deleteTargetDir
-	 *            delete the destination directory before extracting
-	 */
-	public static void unZipFile(
-			final File zipInput,
-			final String outputFolder,
-			final boolean deleteTargetDir ) {
-
-		try {
-			final File of = new File(
-					outputFolder);
-			if (!of.exists()) {
-				if (!of.mkdirs()) {
-					throw new IOException(
-							"Could not create temporary directory: " + of.toString());
-				}
-			}
-			else if (deleteTargetDir) {
-				FileUtil.fullyDelete(of);
-			}
-			final ZipFile z = new ZipFile(
-					zipInput);
-			z.extractAll(outputFolder);
-		}
-		catch (final ZipException e) {
-			LOGGER.warn(
-					"Unable to extract test data",
-					e);
-			Assert.fail("Unable to extract test data: '" + e.getLocalizedMessage() + "'");
-		}
-		catch (final IOException e) {
-			LOGGER.warn(
-					"Unable to create temporary directory: " + outputFolder,
-					e);
-			Assert.fail("Unable to extract test data: '" + e.getLocalizedMessage() + "'");
-		}
 	}
 
 	static protected void replaceParameters(

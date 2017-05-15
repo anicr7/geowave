@@ -28,7 +28,8 @@ import mil.nga.giat.geowave.core.ingest.GeoWaveData;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -55,7 +56,7 @@ public class GPXConsumer implements
 		CloseableIterator<GeoWaveData<SimpleFeature>>
 {
 
-	private final static Logger LOGGER = Logger.getLogger(GpxIngestPlugin.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(GpxIngestPlugin.class);
 
 	private final SimpleFeatureBuilder pointBuilder;
 	private final SimpleFeatureBuilder waypointBuilder;
@@ -147,7 +148,7 @@ public class GPXConsumer implements
 				nextFeature = null;
 			}
 		}
-		catch (IOException | XMLStreamException e) {
+		catch (Exception e) {
 			LOGGER.error(
 					"Error processing GPX input stream",
 					e);
@@ -166,7 +167,7 @@ public class GPXConsumer implements
 		try {
 			nextFeature = getNext();
 		}
-		catch (final XMLStreamException e) {
+		catch (final Exception e) {
 			LOGGER.error(
 					"Error processing GPX input stream",
 					e);
@@ -195,7 +196,7 @@ public class GPXConsumer implements
 
 	private void init()
 			throws IOException,
-			XMLStreamException {
+			Exception {
 
 		while (eventReader.hasNext()) {
 			final XMLEvent event = eventReader.nextEvent();
@@ -214,7 +215,7 @@ public class GPXConsumer implements
 	}
 
 	private GeoWaveData<SimpleFeature> getNext()
-			throws XMLStreamException {
+			throws Exception {
 
 		GPXDataElement currentElement = currentElementStack.peek();
 		GeoWaveData<SimpleFeature> newFeature = null;
@@ -254,7 +255,7 @@ public class GPXConsumer implements
 	private String getChildCharacters(
 			final XMLEventReader eventReader,
 			final String elType )
-			throws XMLStreamException {
+			throws Exception {
 		final StringBuilder buf = new StringBuilder();
 		XMLEvent event = eventReader.nextEvent();
 		while (!(event.isEndElement() && event.asEndElement().getName().getLocalPart().equals(
@@ -271,8 +272,7 @@ public class GPXConsumer implements
 	private void processElementAttributes(
 			final StartElement node,
 			final GPXDataElement element )
-			throws NumberFormatException,
-			XMLStreamException {
+			throws Exception {
 		@SuppressWarnings("unchecked")
 		final Iterator<Attribute> attributes = node.getAttributes();
 		while (attributes.hasNext()) {
@@ -291,8 +291,7 @@ public class GPXConsumer implements
 	private boolean processElementValues(
 			final StartElement node,
 			final GPXDataElement element )
-			throws NumberFormatException,
-			XMLStreamException {
+			throws Exception {
 		switch (node.getName().getLocalPart()) {
 			case "ele": {
 				element.elevation = Double.parseDouble(getChildCharacters(
