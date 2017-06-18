@@ -67,9 +67,8 @@ public class HBaseBulkDeleteEndpoint extends
 		long totalRowsDeleted = 0L;
 		long totalVersionsDeleted = 0L;
 		FilterList filterList = null;
-		final DataAdapter dataAdapter = null;
+		// final DataAdapter dataAdapter = null;
 		ByteArrayId adapterId = null;
-		ByteString value = ByteString.EMPTY;
 
 		Long timestamp = null;
 		if (request.hasTimestamp()) {
@@ -182,6 +181,10 @@ public class HBaseBulkDeleteEndpoint extends
 			scanner = null;
 			Scan scan = new Scan();
 			scan.setFilter(filterList);
+
+			if (adapterId != null) {
+				scan.addFamily(adapterId.getBytes());
+			}
 
 			Region region = env.getRegion();
 			scanner = region.getScanner(scan);

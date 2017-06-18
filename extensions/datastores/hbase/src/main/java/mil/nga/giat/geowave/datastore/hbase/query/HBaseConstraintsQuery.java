@@ -225,7 +225,7 @@ public class HBaseConstraintsQuery extends
 				limit);
 	}
 
-	private CloseableIterator<Object> aggregateWithCoprocessor(
+	public CloseableIterator<Object> aggregateWithCoprocessor(
 			final BasicHBaseOperations operations,
 			final AdapterStore adapterStore,
 			final Integer limit ) {

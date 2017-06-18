@@ -1,5 +1,5 @@
 option java_package = "mil.nga.giat.geowave.datastore.hbase.operations.protobuf";
-option java_outer_classname = "HBaseBulkDelete";
+option java_outer_classname = "HBaseBulkDeleteProtos";
 option java_generic_services = true;
 option java_generate_equals_and_hash = true;
 option optimize_for = SPEED;
@@ -26,8 +26,7 @@ message BulkDeleteRequest {
 }
 
 message BulkDeleteResponse {
-  required uint64 rowsDeleted = 1;
-  required uint64 versionsDeleted = 2;
+  required bytes rowsDeleted = 1;
 }
 
 service BulkDeleteService {
